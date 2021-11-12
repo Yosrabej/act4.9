@@ -46,12 +46,13 @@ class ArticlesController extends AbstractFOSRestController
     }
 
     /**
-     *  @Rest\Post("/article"), name="ajout_article")
-     * @Method({"POST"})
+     *  @Rest\Post("/article", name="article")
+     * 
      */
     public function addArticle(Request $request, EntityManagerInterface $manager)
     {
         $data = $request->request->all();
+
         if (isset($data['titre']) && isset($data['contenu']) && isset($data['auteur'])) {
             $article = new Articles();
             $article->setTitre($data['titre']);
