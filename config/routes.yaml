@@ -1,7 +1,3 @@
 #index:
 #    path: /
 #    controller: App\Controller\DefaultController::index
-api_ajout_article:
-    path: /article
-    defaults: { _controller: 'App:Articles:addArticle' }
-    methods: ["POST"]

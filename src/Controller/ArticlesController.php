@@ -3,21 +3,13 @@
 namespace App\Controller;
 
 use App\Entity\Articles;
-use App\Form\ArticleType;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\RestBundle\Controller\AbstractFOSRestController;
-use JsonSerializable;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Annotation\Route;
 use FOS\RestBundle\Controller\Annotations as Rest;
 use Symfony\Component\HttpFoundation\Request;
-use Throwable;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use GuzzleHttp\Client;
-
 
 class ArticlesController extends AbstractFOSRestController
 {
@@ -36,10 +28,6 @@ class ArticlesController extends AbstractFOSRestController
             $data[$key]['date de publication'] = $article->getDateDePublication();
         }
         return new JsonResponse($data);
-        // $data = serialize($articles);
-        // return new Response($data);
-
-        //  return $this->render('articles/index.html.twig', ["articles" => $articles]);
     }
 
 
@@ -51,11 +39,6 @@ class ArticlesController extends AbstractFOSRestController
     {
         $article = $this->getDoctrine()->getRepository(Articles::class)->find($id);
         $data = serialize($article);
-        /* if ($article) {
-           
-        } else {
-            $data = "not found";
-        }*/
         if (!$article) {
             throw $this->createNotFoundException();
         }
@@ -68,16 +51,20 @@ class ArticlesController extends AbstractFOSRestController
      */
     public function addArticle(Request $request, EntityManagerInterface $manager)
     {
-        $article = new Articles();
-        //  $form = $this->createForm(ArticleType::class, $article);
-        // $form->handleRequest($request);
-        $article->setTitre('titre3');
-        $article->setContenu('contenu3');
-        $article->setAuteur('auteur3');
-        $date = new \DateTime('10/01/2020');
-        $article->setDateDePublication($date);
-        $manager->persist($article);
-        $manager->flush();
+        $data = $request->request->all();
+        if (isset($data['titre']) && isset($data['contenu']) && isset($data['auteur'])) {
+            $article = new Articles();
+            $article->setTitre($data['titre']);
+            $article->setContenu($data['contenu']);
+            $article->setAuteur($data['auteur']);
+            $date = new \DateTime();
+            $article->setDateDePublication($date);
+            $manager->persist($article);
+            $manager->flush();
+            return new Response('success with id: ' . $article->getId());
+        } else {
+            return new Response('error');
+        }
     }
 
     /**
@@ -88,22 +75,42 @@ class ArticlesController extends AbstractFOSRestController
     {
         $article = new Articles();
         $article = $this->getDoctrine()->getRepository(Articles::class)->find($id);
-        $article->setTitre('titre4');
-        $article->setContenu('contenu3');
-        $article->setAuteur('auteur3');
-        $date = new \DateTime('10/01/2020');
-        $article->setDateDePublication($date);
-        $manager->persist($article);
-        $manager->flush();
+        $data = $request->request->all();
+        // dd($data);
+        if ($article) {
+            if (isset($data['titre']) && isset($data['contenu']) && isset($data['auteur'])) {
+                $article->setTitre($data['titre']);
+                $article->setContenu($data['contenu']);
+                $article->setAuteur($data['auteur']);
+                $date = new \DateTime();
+                $article->setDateDePublication($date);
+                $manager->merge($article);
+                $manager->flush();
+                return new Response('updated with id: ' . $article->getId());
+            } else {
+                return new Response('error');
+            }
+        } else {
+            if (isset($data['titre']) && isset($data['contenu']) && isset($data['auteur'])) {
+                $article = new Articles();
+                $article->setTitre($data['titre']);
+                $article->setContenu($data['contenu']);
+                $article->setAuteur($data['auteur']);
+                $date = new \DateTime();
+                $article->setDateDePublication($date);
+                $manager->persist($article);
+                $manager->flush();
+                return new Response('updated with id: ' . $article->getId());
+            }
+        }
     }
 
     /**
-     *  @Rest\Delete("/article/delete/{id}"), name="supp_article")
+     *  @Rest\Delete("/article/delete/{article}"), name="supp_article")
      * @Method({"DELETE"})
      */
-    public function deleteArticle(Request $request, EntityManagerInterface $manager, $id)
+    public function deleteArticle(Request $request, EntityManagerInterface $manager, Articles $article)
     {
-        $article = $this->getDoctrine()->getRepository(Articles::class)->findOneBy(['id' => $id]);
         $manager->remove($article);
         $manager->flush();
         return new Response('deleted');
@@ -122,7 +129,6 @@ class ArticlesController extends AbstractFOSRestController
             $data[$key]['date de publication'] = $article->getDateDePublication();
         }
         $sliced_array = array_slice($data, -3);
-        // print_r($sliced_array);
         return new JsonResponse($sliced_array);
     }
 }
